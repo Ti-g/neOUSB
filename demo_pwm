@@ -1,0 +1,12 @@
+#!/bin/bash
+set -u
+echo
+echo "   Usage: ./demo_pwm percent_pwm "
+echo "   eg. ./demo_pwm 50"
+echo
+
+
+#------
+ousb io PORTB 0
+ousb pwm-freq 1 4000
+ousb pwm 1 $1

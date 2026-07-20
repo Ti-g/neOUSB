@@ -1,0 +1,36 @@
+#!/bin/sh
+
+#====== Tell of usage first.
+if [ $# -ne 1 ]
+  then  echo
+        echo "   Fill a file with text and some variation per line"
+        echo "     as determined by the script in this file."
+        echo "   Eg. lines are Fred1 Fred2 Fred3 ..."
+        echo
+        echo "   Linux usage   : ./fill_file file_name"
+        echo "   Windows usage : sh ./fill_file file_name"
+        echo "     (assuming cygwin, Dev-C++, MinGW, or avr-gcc installed."
+        echo 
+        exit
+fi
+
+#====== stop auto declaration and declare variables.
+set -u
+LOWER=0
+UPPER=999
+FILENAME=$1
+
+#====== got file name, do the filling
+ >$FILENAME                 # create file and clear it.
+i=$LOWER
+j=
+until test $i -gt $UPPER    # i from LOWER to UPPER.
+  do
+    let "j = i & 0xFF"
+    echo "-r io portb $j" >>$FILENAME
+    let "i = i + 1"
+  done
+
+echo "quit" >>$FILENAME
+
+

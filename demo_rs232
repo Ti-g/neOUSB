@@ -1,0 +1,28 @@
+#!/bin/bash
+set -u
+
+#------ Initialize ports and the uart.
+DDRD=$(ousb -r io DDRD)
+let "DDRD = (DDRD & 0xFE) | 2"   # TX to output, RX to input.
+ousb io DDRD $DDRD
+
+ousb io UBRRL 75                 # baud rate to 9600 baud.
+UCSRB=$(ousb -r io UCSRB)
+let "UCSRB = UCSRB | 0x18"       # Enable TX and RX.
+ousb io UCSRB $UCSRB
+
+#------ Loop to receive, add one, and transmit back.
+while  [ 0 == 0 ]
+do
+  #--- wait for RX of byte.
+  UCSRA=0
+  while [ $UCSRA == 0 ]
+   do
+     UCSRA=$(ousb -r io UCSRA)
+     let "UCSRA = UCSRA & 0x80"
+   done
+  #--- get received byte, incr, and send.
+   UDR=$(ousb -r io UDR)
+   let "UDR = UDR + 1"
+   ousb io UDR $UDR
+done

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -u
+
+#------ Sense trim pot and write to the LEDs.
+POT=
+until  [ 0 != 0 ]
+do
+ sleep 0.3
+ POT=$(ousb adc 5)
+ let "POT = POT/4"
+ ousb io PORTB $POT
+done

@@ -1,0 +1,19 @@
+#!/bin/bash
+
+#----- stop auto declaration of variables.
+set -u
+
+#----- forever led chaser loop and input, ctrl-C to stop.
+PATTERN=1
+READ=0
+until  [ 0 != 0 ]
+do
+ ousb io PORTB $PATTERN
+ READ=$( ousb io PINC)  
+ echo "   LED Output = $PATTERN,   Input on PORTC = $READ."
+ sleep 0.3
+ let "PATTERN = PATTERN + PATTERN"
+ if [ $PATTERN == 256 ]
+  then PATTERN=1
+ fi
+done

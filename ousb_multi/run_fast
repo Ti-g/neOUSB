@@ -1,0 +1,28 @@
+#!/bin/sh
+
+#=======  Usage
+#
+#  This script file only works on Linux as Windows pipes are not good enough.
+
+set -u  # stop auto-declaration of variables.
+
+#--- create FIFOs so program and ousb can communicate.
+FIFO_TO_OUSB=$HOME/tmp/f_to_ousb
+FIFO_FROM_OUSB=$HOME/tmp/f_from_ousb
+rm -f $FIFO_TO_OUSB
+rm -f $FIFO_FROM_OUSB
+mkfifo $FIFO_TO_OUSB
+mkfifo $FIFO_FROM_OUSB
+
+#--- start ousb with stdin and stdout redirected to FIFO
+#    note its ousb from the directory above not the the ousb in the path.
+../ousb -multi < $FIFO_TO_OUSB > $FIFO_FROM_OUSB &
+
+#--- start the program that communicates with the ousb.
+./fast_c_ousb $FIFO_TO_OUSB $FIFO_FROM_OUSB
+
+#--- remove the FIFOs
+rm -f $FIFO_TO_OUSB
+rm -f $FIFO_FROM_OUSB
+
+

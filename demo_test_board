@@ -1,0 +1,110 @@
+#!/bin/bash
+
+#----- stop auto declaration of variables.
+set -u
+
+#------ Introduction.
+echo
+echo "   Open-USB-IO Test Program"
+echo "   ~~~~~~~~~~~~~~~~~~~~~~~~~"
+echo
+echo "     * See test circuit for testing RS-232, port A and port D."
+echo "       TX/RX and RTS will report FAIL unless the cable is plugged in."
+echo
+echo "     * LEDs on the board and the test board should rotate."
+echo
+echo "     * Change switches, trimpot and put finger over LDR to see changes."
+echo
+echo "     * Testing changes port settings,  "
+echo "         hit reset to re-initialize board after testing."
+echo
+echo "     * Hit Control-C to stop the test program."
+echo
+
+#------ Initialize ports and the uart.
+ousb io DDRD 0x3A         > /dev/null    # Set portd direction.
+ousb io UBRRL 75          > /dev/null    # baud rate to 9600 baud.
+UCSRB=0
+UCSRB=$(ousb -r io UCSRB) > /dev/null    # Enable TX and RX.
+let "UCSRB = UCSRB | 0x18"
+ousb io UCSRB $UCSRB      > /dev/null
+ousb io DDRA 0x9F         > /dev/null    # PA0-4 and PA7 to digital outputs.
+ousb -r io UDR > /dev/null               # chew up buffered UART chars.
+ousb -r io UDR > /dev/null
+ousb -r io UDR > /dev/null
+ousb -r io UDR > /dev/null
+ousb -r io UDR > /dev/null
+
+
+#----- forever led chaser loop and input, ctrl-C to stop.
+BPATTERN=1
+APATTERN=1
+DPATTERN=0
+CREAD=0
+DREAD=0
+TRIM=
+LDR=
+TMP=
+RTSCTS=
+until  [ 0 != 0 ]
+do
+ #---- port writes 
+ ousb -r io PORTB $BPATTERN > /dev/null   # Set LEDs, divert screen printout to bin.
+ let "TMP = APATTERN ^ 0xFF"
+ ousb io PORTA $TMP         > /dev/null
+ DREAD=$(ousb -r io PORTD)
+ let "DREAD = (DREAD & 0xC7) + (($DPATTERN & 0x38)^0x08)"
+ ousb io PORTD $DREAD       > /dev/null
+ ousb io UDR $BPATTERN      > /dev/null   # Tx PATTERN out RS232.
+
+ #--- port reads
+ CREAD=$( ousb -r io PINC)                # Read switches
+ TRIM=$(ousb -r adc 5)                    # Read trim pot
+ LDR=$(ousb -r adc 6)                     # Read LDR
+ DREAD=$(ousb -rh io PIND)                # Get RTS-CTS link.
+ let "DREAD = DREAD & 0x40"
+ RTSCTS="FAIL"
+ if [ $DPATTERN == 0x10 ]
+  then  if [ $DREAD != 0 ]
+          then RTSCTS="OK"
+        fi
+  else  if [ $DREAD == 0 ]
+           then RTSCTS="OK"
+        fi
+ fi
+
+ #--- sleep, do RX then print results.
+ sleep 0.3
+ RX=$(ousb -r io UDR)
+ if [ $RX == $BPATTERN ]
+  then RX="OK"
+  else RX="FAIL"
+ fi
+ echo -n "   LED= $BPATTERN, Switches= $CREAD, Trimpot= $TRIM, LDR= $LDR"
+ echo    ", TX/RX=$RX, RTS=$RTSCTS"
+ ousb -r io UDR > /dev/null               # chew up buffered UART chars.
+ ousb -r io UDR > /dev/null
+ ousb -r io UDR > /dev/null
+ ousb -r io UDR > /dev/null
+ ousb -r io UDR > /dev/null
+
+  #--- Get next LED patterns.
+ let "BPATTERN = BPATTERN + BPATTERN"
+ case $BPATTERN in
+  256) BPATTERN=1
+       DPATTERN=0x00  ;;
+  128) DPATTERN=0x08  ;;
+   64) DPATTERN=0x10  ;;
+   32) DPATTERN=0x20  ;;
+    *) DPATTERN=0x00  ;;
+ esac
+
+ let "APATTERN = APATTERN + APATTERN"
+ if [ $APATTERN == 256 ]                   # ensure pattern 1-128.
+  then APATTERN=1
+ fi
+ if [ $APATTERN == 32 ]                   # ensure skip 32 and 64 PA5,PA6.
+  then APATTERN=128
+ fi
+
+done

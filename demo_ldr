@@ -1,0 +1,12 @@
+#!/bin/bash
+set -u
+
+#------ Sense ldr and write to the LEDs.
+LDR=
+until  [ 0 != 0 ]
+do
+ sleep 0.3
+ LDR=$(ousb adc 6)
+ let "LDR = LDR/4"
+ ousb io PORTB $LDR
+done
