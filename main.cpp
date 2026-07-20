@@ -16,6 +16,7 @@
 #include <cmath>
 #include <dirent.h>
 #include <math.h>
+#include <cstdint>
 #ifdef _WIN32
  #include <windows.h>
 #endif
