@@ -26,7 +26,7 @@ endif
 
 ifeq ($(OS),WINDOWS)
 USBFLAGS=
-USBLIBS=    -lhid -lusb -lsetupapi
+USBLIBS=    -lhid -lusb-1.0 -lsetupapi
 EXE_SUFFIX= .exe
 endif
 

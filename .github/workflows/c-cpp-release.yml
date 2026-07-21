@@ -1,0 +1,56 @@
+name: C/C++ Deployment
+on: push
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Build Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libusb-1.0-0 libusb-1.0-0-dev libusb-dev
+
+      - name: Compile
+        run: make all
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ousb
+
+  build-windows:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          install: >-
+            make
+            mingw-w64-ucrt-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-git
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-headers
+            mingw-w64-ucrt-x86_64-libusb
+
+      - name: Compile
+        run: make all OS=WINDOWS
+
+      - name: Create Github Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref_type == 'tag'
+        with:
+          files: ousb.exe

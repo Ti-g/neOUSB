@@ -20,7 +20,7 @@ hidsdi.h.
 #include <windows.h>
 #include <setupapi.h>
 #include "hidsdi.h"
-#include <ddk/hidpi.h>
+#include <hidpi.h>
 
 #include "usbcalls.h"
 #ifdef DEBUG
